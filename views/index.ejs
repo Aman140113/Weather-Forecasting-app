@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather Forecast</title>
+    <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Weather Forecast</h1>
+            <p class="header-subtitle">Get real-time weather updates for any city</p>
+        </div>
+
+        <!-- Search Container -->
+        <div class="search-container">
+            <div class="search-title">Search Location</div>
+            
+            <!-- City Search Form -->
+            <form class="search-form" method="POST" action="/forecast-city">
+                <input type="text" name="cityName" class="search-input" placeholder="Enter city name..." required>
+                <button type="submit" class="search-btn">🔍</button>
+            </form>
+
+            <div class="divider">or</div>
+
+            <!-- Current Location Form -->
+            <form id="locationForm" method="POST" action="/forecast">
+                <input type="hidden" id="latitude" name="latitude">
+                <input type="hidden" id="longitude" name="longitude">
+                <button type="submit" class="location-btn">
+                  📌 Use Current Location
+                </button>
+            </form>
+        </div>
+
+        <!-- Error Display -->
+        <% if (typeof error !== "undefined") { %>
+            <div class="error">
+                <strong>⚠️ Error:</strong> <%= error %>
+            </div>
+        <% } %>
+
+        <!-- Weather Dashboard -->
+        <% if (typeof current !== "undefined") { %>
+            <div class="weather-dashboard">
+                <!-- Current Weather -->
+                <div class="current-weather">
+                    <div class="weather-icon"><%- getWeatherIcon(current.weather) %></div>
+                    <div class="current-temp"><%= current.temp %>°</div>
+                    <div class="current-condition"><%= current.weather %></div>
+                    <div class="current-location"><%= current.city %></div>
+                    <div class="current-date">Feels like <%= Math.round(current.temp) %>°C</div>
+                    
+                    <!-- Weather Details Grid -->
+                    <div class="weather-details">
+                        <div class="detail-card">
+                            <div class="detail-icon">💧</div>
+                            <div class="detail-label">Humidity</div>
+                            <div class="detail-value"><%= current.humidity %>%</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">💨</div>
+                            <div class="detail-label">Wind Speed</div>
+                            <div class="detail-value"><%= current.windSpeed %> km/h</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">🌡️</div>
+                            <div class="detail-label">Pressure</div>
+                            <div class="detail-value">1002 hPa</div>
+                        </div>
+                        <div class="detail-card">
+                            <div class="detail-icon">👁️</div>
+                            <div class="detail-label">Visibility</div>
+                            <div class="detail-value">10 km</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Forecast Section -->
+                <div class="forecast-section">
+                    <h2 class="forecast-title">5-Day Forecast</h2>
+                    
+                    <div class="forecast-container">
+                        <% forecast.forEach(function(day, index) { %>
+                            <div class="forecast-day">
+                                <div class="forecast-day-name"><%- getDayName(day.day, index) %></div>
+                                <div class="forecast-icon"><%- getWeatherIcon(day.weather) %></div>
+                                <div class="forecast-temps">
+                                    <span class="temp-high"><%= day.maxTemp %>°</span>
+                                    <span class="temp-low"><%= day.minTemp %>°</span>
+                                </div>
+                                <div class="forecast-condition"><%= day.weather %></div>
+                            </div>
+                        <% }); %>
+                    </div>
+                </div>
+            </div>
+        <% } %>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <div class="footer-text">
+                <p>Powered by <a href="https://openweathermap.org/api" target="_blank" rel="noopener noreferrer">OpenWeather API</a></p>
+                <p>Developed by <span class="developer-name">Aman</span></p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Helper functions for EJS
+        function getDayName(day, index) {
+            const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+            const today = new Date().getDay() - 1; // Adjust for Monday start
+            return days[(today + index + 1) % 7];
+        }
+
+        // Location form handler
+        document.getElementById("locationForm").addEventListener("submit", function(e) {
+            e.preventDefault();
+            
+            const button = e.target.querySelector('.location-btn');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span> Getting Location...';
+            button.disabled = true;
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById("latitude").value = position.coords.latitude;
+                    document.getElementById("longitude").value = position.coords.longitude;
+                    e.target.submit();
+                }, function(error) {
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                    alert("Error getting location: " + error.message);
+                });
+            } else {
+                button.innerHTML = originalText;
+                button.disabled = false;
+                alert("Geolocation not supported in this browser.");
+            }
+        });
+
+        // City search form handler
+        document.querySelector('form[action="/forecast-city"]').addEventListener('submit', function(e) {
+            const button = e.target.querySelector('.search-btn');
+            const originalText = button.innerHTML;
+            button.innerHTML = '<span class="loading"></span>';
+            button.disabled = true;
+        });
+    </script>
+</body>
+</html>
